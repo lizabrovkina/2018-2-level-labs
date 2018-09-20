@@ -9,16 +9,16 @@ def calculate_frequences() -> dict:
     """
     Calculates number of times each word appears in the text
     """
-    a = {}
+    d = {}
 
 def filter_stop_words() -> dict:
     """
     Removes all stop words from the given frequencies dictionary
     """
-    a = {}
+    d = {}
 
 def get_top_n() -> tuple:
     """
     Takes first N popular words
     """
-    a = {}
+    d = {}
