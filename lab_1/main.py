@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 def calculate_frequences(my_text):
 
@@ -59,3 +60,29 @@ def get_top_n(freq_2, top_n):
 top_n = int(input("Введите число: "))
 
 
+=======
+"""
+Labour work #1
+
+Count frequencies dictionary by the given arbitrary text
+"""
+
+
+def calculate_frequences() -> dict:
+    """
+    Calculates number of times each word appears in the text
+    """
+    return {'abc' : 'letters'}
+
+def filter_stop_words() -> dict:
+    """
+    Removes all stop words from the given frequencies dictionary
+    """
+    d = {}
+
+def get_top_n() -> tuple:
+    """
+    Takes first N popular words
+    """
+    d = {}
+>>>>>>> 427364642322de383034aa803d2080033e84e6c9
