@@ -1,90 +1,194 @@
 """
-Labour work #1
-
-Count frequencies dictionary by the given arbitrary text
+Labour work #3
+ Building an own N-gram model
 """
 
-def read_from_file(path_to_file, lines_limit: int) -> str:
-    my_text = ''
-    count_lines = 0
-    my_file = open(path_to_file, 'r')
-    for line in my_file.read():
-        if count_lines == lines_limit:
-            return my_text
-        my_text += line
-        count_lines += 1
-    my_file.close()
-    return my_text
+import math
+
+REFERENCE_TEXT = ''
+if __name__ == '__main__':
+    with open('not_so_big_reference_text.txt', 'r') as f:
+        REFERENCE_TEXT = f.read()
+
+def split_by_sentence(sample_text):
+    if type(sample_text) != str:
+        return list()
+    text = sample_text
+    eofs = ".!?"  
+    tmp = str()
+    lofs = []  # list of sentences
+    lofw = []  # list of words
+    ind = 0  
+    for sym in text:
+        if len(lofw) == 0 and len(lofs) == 0:
+            lofw.append("<s>")
+        if "A" <= sym <= "Z":
+            if ind == 0:
+                tmp += sym
+            if ind == 1:
+                if len(lofw) != 0:
+                    lofw.append("</s>")
+                    lofs.append(lofw)
+                    lofw = []
+                    lofw.append("<s>")
+                ind = 0
+                tmp += sym
+        elif "a" <= sym <= "z":
+            tmp += sym
+            if ind == 1:
+                ind = 0
+        elif sym == " " and ind == 0:
+            if tmp != "":
+                lofw.append(tmp.lower())
+                tmp = ""
+        elif eofs.find(sym) >= 0:
+            if tmp != "":
+                lofw.append(tmp.lower())
+                tmp = ""
+            ind = 1
+    if len(lofw) - 1 != 0 and ind == 1:
+        lofw.append("</s>")
+        lofs.append(lofw)
+
+    return lofs
 
 
-def calculate_frequences(text: str) -> dict:
-    first_dict = {}
-    list_of_marks = [
-                    '.', ',', ':', '"', '`', '[', ']',
-                    '?', '!', '@', '&', "'", '-',
-                    '$', '^', '*', '(', ')',
-                    '_', '“', '”', '’', '#', '%', '<', '>', '*', '~',
-                    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
-                    ]
-    try:
-        elements = text.split()
-    except AttributeError:
-        return first_dict
-    for thing in elements:
-        if thing.isdigit():
-            continue
-        for mark in list_of_marks:
-            if mark in thing:
-                pos_mark = thing.find(mark)
-                thing = thing[:pos_mark] + thing[pos_mark + 1:]
-            thing = thing.strip(mark)
-        thing = thing.lower()
-        first_dict[thing] = first_dict.get(thing, 0) + 1
-    if '' in first_dict.keys():
-        first_dict.pop('')
-    return first_dict
+class WordStorage:
+    storage = dict()
+    now = int()  # number of words
+
+    def __init__(self):
+        pass
+
+    def put(self, word):
+        if type(word) != str:
+            return
+        for k, v in self.storage.items():
+            if word == k:
+                return v
+        self.storage[word] = self.now
+        self.now += 1
+        return self.get_id_of(word)
+
+    def get_id_of(self, word):
+        if type(word) != str:
+            return -1
+        if type(word) != str:
+            return
+        for k, v in self.storage.items():
+            if word == k:
+                return v
+        return -1
+
+    def get_original_by(self, id):
+        if type(id) is None:
+            return "UNK"
+        if type(id) != int:
+            return "UNK"
+        for k, v in self.storage.items():
+            if id == v:
+                return k
+        return "UNK"
+
+    def from_corpus(self, corpus):
+        if type(corpus) != tuple:
+            return
+        for word in corpus:
+            self.put(word)
+        return self.storage
 
 
-def filter_stop_words(first_dict: dict, stop_words: list) -> dict:
-    third_dict = {}
-    try:
-        second_dict = first_dict.copy()
-    except AttributeError:
-        return {}
-    if first_dict is None or stop_words is None:
-        return {}
-    for stop_word in stop_words:
-        if stop_word in second_dict.keys():
-            second_dict.pop(stop_word)
-    for key in second_dict.keys():
-        try:
-            if 0 <= key < 0:
-                continue
-        except TypeError:
-            third_dict[key] = first_dict[key]
-    return third_dict
+def encode(storage_instance, corpus):
+    cod = list()
+    list_2 = list()
+    for list_1 in corpus:
+        for word in list_1:
+            if word == "<s>" or word == "</s>":
+                list_2.append(word)
+                if word == "</s>":
+                    cod.append(list_2)
+                    list_2 = []
+            else:
+                for k, w in storage_instance.items():
+                    if w == word:
+                        list_2.append(k)
+
+    return cod
 
 
-def get_top_n(third_dict: dict, top_n: int) -> tuple:
-    list_of_value_key = []
-    list_of_top_words = []
-    count = 0
-    if top_n < 0:
-        return ()
-    for key, value in third_dict.items():
-        list_of_value_key.append([value, key])
-    list_of_value_key.sort(reverse=True)
-    for item in list_of_value_key:
-        if count == top_n:
-            break
-        list_of_top_words.append(item[1])
-        count += 1
-    return tuple(list_of_top_words)
+class NGramTrie:
+    size = 0
+    gram_frequencies = dict()
+    gram_log_probabilities = dict()
 
+    def __init__(self, size):
+        self.size = size
 
-def write_to_file(path_to_file: str, content: tuple):
-    my_file = open(path_to_file, 'w')
-    for word in content:
-        my_file.write(word + '\n')
-    my_file.close()
+    def fill_from_sentence(self, sentence):
+        if type(sentence) is None:
+            return {}
+        if type(sentence) != tuple:
+            return {}
+        indicator = "OK" 
+        gram = dict()
+        i = -1
+        for word in sentence:
+            buf = list()
+            i += 1
+            if i + 1 != len(sentence):
+                ind = 0
+                buf.append(sentence[i])
+                buf.append(sentence[i+1])
+                for k in gram.keys():
+                    if k == tuple(buf):
+                        ind = 1
+                if ind == 0:
+                    gram[tuple(buf)] = 1
+                else:
+                    gram[tuple(buf)] += 1
+        if indicator == "OK":
+            self.gram_frequencies = gram
+
+    def calculate_log_probabilities(self):
+        print (self.gram_frequencies)
+        for k, v in self.gram_frequencies.items():
+            buft = k
+            bufc = v
+            bufz = 0.0
+            for kk, vv in self.gram_frequencies.items():
+                if k[0] == kk[0]:
+                    bufz += vv
+            self.gram_log_probabilities[buft] = math.log(bufc / bufz)
+
+    def predict_next_sentence(self, prefix):
+        if prefix is None:
+            return []
+        if type(prefix) != tuple:
+            return []
+        if len(prefix) == 1:
+            ind1 = 0
+            Res = [prefix[0]]
+            search = prefix[0]
+            buf = list()
+            while ind1 != 1:
+                ind1 = 1
+                maxk = list()
+                maxv = -10000.0
+                ind2 = 0
+                for k, v in self.gram_log_probabilities.items():
+                    if k[0] == search:
+                        for elem in buf:
+                            if elem == k[1]:
+                                ind2 = 1
+                        if ind2 != 1:
+                            if v > maxv:
+                                ind1 = 0
+                                maxv = v
+                                maxk = k
+                if (ind1 == 0):
+                    Res.append(maxk[1])
+                    search = maxk[1]
+            return Res
+        return []
+
 
