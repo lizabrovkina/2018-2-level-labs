@@ -4,19 +4,21 @@ Labour work #3
 """
 
 import math
- REFERENCE_TEXT = ''
+
+REFERENCE_TEXT = ''
 if __name__ == '__main__':
     with open('not_so_big_reference_text.txt', 'r') as f:
         REFERENCE_TEXT = f.read()
- def split_by_sentence(sample_text):
+
+def split_by_sentence(sample_text):
     if type(sample_text) != str:
         return list()
     text = sample_text
-    eofs = ".!?"  
+    eofs = ".!?"
     tmp = str()
     lofs = []  # list of sentences
     lofw = []  # list of words
-    ind = 0  
+    ind = 0
     for sym in text:
         if len(lofw) == 0 and len(lofs) == 0:
             lofw.append("<s>")
@@ -47,14 +49,19 @@ if __name__ == '__main__':
     if len(lofw) - 1 != 0 and ind == 1:
         lofw.append("</s>")
         lofs.append(lofw)
-     return lofs
- class WordStorage:
-    storage = dict()
-    now = int()  # number of words
-     def __init__(self):
-        pass
-     def put(self, word):
+
+    return lofs
+
+
+class WordStorage:
+
+    def __init__(self):
+        self.storage = dict()
+        self.now = 1  # number of words
+
+    def put(self, word):
         if type(word) != str:
+
             return
         for k, v in self.storage.items():
             if word == k:
@@ -62,16 +69,18 @@ if __name__ == '__main__':
         self.storage[word] = self.now
         self.now += 1
         return self.get_id_of(word)
-     def get_id_of(self, word):
-        if type(word) != str:
+
+    def get_id_of(self, word):
+        if type(word) is None:
             return -1
         if type(word) != str:
-            return
+            return -1
         for k, v in self.storage.items():
             if word == k:
                 return v
         return -1
-     def get_original_by(self, id):
+
+    def get_original_by(self, id):
         if type(id) is None:
             return "UNK"
         if type(id) != int:
@@ -80,39 +89,44 @@ if __name__ == '__main__':
             if id == v:
                 return k
         return "UNK"
-     def from_corpus(self, corpus):
+
+    def from_corpus(self, corpus):
         if type(corpus) != tuple:
             return
         for word in corpus:
             self.put(word)
         return self.storage
- def encode(storage_instance, corpus):
+
+
+def encode(storage_instance, corpus):
     cod = list()
     list_2 = list()
     for list_1 in corpus:
         for word in list_1:
-            if word == "<s>" or word == "</s>":
-                list_2.append(word)
-                if word == "</s>":
-                    cod.append(list_2)
-                    list_2 = []
-            else:
-                for k, w in storage_instance.items():
-                    if w == word:
-                        list_2.append(k)
-     return cod
- class NGramTrie:
-    size = 0
-    gram_frequencies = dict()
-    gram_log_probabilities = dict()
-     def __init__(self, size):
+            for k, v in storage_instance.storage.items():
+                if k == word:
+                    list_2.append(v)
+        cod.append(list_2)
+
+    return cod
+
+
+
+
+
+class NGramTrie:
+
+    def __init__(self, size):
+        self.gram_frequencies = dict()
+        self.gram_log_probabilities = dict()
         self.size = size
-     def fill_from_sentence(self, sentence):
-        if type(sentence) is None:
+
+    def fill_from_sentence(self, sentence):
+        if sentence is None:
             return {}
         if type(sentence) != tuple:
             return {}
-        indicator = "OK" 
+        indicator = "OK"  # indicator error
         gram = dict()
         i = -1
         for word in sentence:
@@ -131,8 +145,9 @@ if __name__ == '__main__':
                     gram[tuple(buf)] += 1
         if indicator == "OK":
             self.gram_frequencies = gram
-     def calculate_log_probabilities(self):
-        print (self.gram_frequencies)
+
+    def calculate_log_probabilities(self):
+        print(self.gram_frequencies)
         for k, v in self.gram_frequencies.items():
             buft = k
             bufc = v
@@ -141,7 +156,9 @@ if __name__ == '__main__':
                 if k[0] == kk[0]:
                     bufz += vv
             self.gram_log_probabilities[buft] = math.log(bufc / bufz)
-     def predict_next_sentence(self, prefix):
+
+
+    def predict_next_sentence(self, prefix):
         if prefix is None:
             return []
         if type(prefix) != tuple:
@@ -166,9 +183,8 @@ if __name__ == '__main__':
                                 ind1 = 0
                                 maxv = v
                                 maxk = k
-                if (ind1 == 0):
+                if ind1 == 0:
                     Res.append(maxk[1])
                     search = maxk[1]
             return Res
         return []
-
